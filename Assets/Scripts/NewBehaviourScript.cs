@@ -18,6 +18,7 @@ public class NewBehaviourScript : MonoBehaviour
     private bool _pointsNeutralH;
     private bool _pointsNeutralV;
     private bool _isGrounded;
+    private int _collisions;
 
 
     // Start is called before the first frame update
@@ -145,8 +146,11 @@ public class NewBehaviourScript : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        Debug.Log(_isGrounded);
-        _isGrounded = true;
+        _collisions++;
+        Debug.Log($"Collisions { _collisions}");
+
+        Debug.Log($"Is grounded {_isGrounded}");
+        _isGrounded = _collisions > 0;//  true;
         //_heroImages[0].enabled = true;
         //_heroImages[1].enabled = false;
         HideImages();
@@ -162,17 +166,18 @@ public class NewBehaviourScript : MonoBehaviour
 
     void OnCollisionExit2D(Collision2D collision)
     {
-        
+        _collisions--;
+        Debug.Log($"Collisions { _collisions}");
         HideImages();
-        Collider2D[] allColliders = null;
-        _hero.GetAttachedColliders(allColliders);
-        Debug.Log(allColliders);
-        Collider2D[] tempcolliders = null;
-        _isGrounded = allColliders.Any(c => c.GetContacts(tempcolliders) > 0);  //collision.contactCount > 0;
+        ////Collider2D[] allColliders = null;
+        ////_hero.GetAttachedColliders(allColliders);
+        ////Debug.Log(allColliders);
+        ////Collider2D[] tempcolliders = null;
+        _isGrounded = _collisions > 0; //allColliders.Any(c => c.GetContacts(tempcolliders) > 0);  //collision.contactCount > 0;
         ////_heroImages[0].enabled = false;
         _heroImages[1].enabled = !_isGrounded;
         _heroImages[0].enabled = _isGrounded;
-        Debug.Log($"Collisions count {collision.contactCount}");
+        ////Debug.Log($"Collisions count {collision.contactCount}");
         Debug.Log($"Is grounded {_isGrounded}");
     }
 }
