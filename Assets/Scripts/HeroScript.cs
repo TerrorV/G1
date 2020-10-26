@@ -5,11 +5,12 @@ using System.Linq;
 using Unity.Mathematics;
 using UnityEngine;
 
-public class NewBehaviourScript : MonoBehaviour
+public class HeroScript : MonoBehaviour
 {
     private Rigidbody2D _hero;
     private SpriteRenderer[] _heroImages;
     private bool _jump;
+    private bool _fire;
     private KeyCode _keyPressed;
     private float _horizontalInput;
     private float _verticalInput;
@@ -19,6 +20,7 @@ public class NewBehaviourScript : MonoBehaviour
     private bool _pointsNeutralV;
     private bool _isGrounded;
     private int _collisions;
+    public ProjectileScript projectile;
 
 
     // Start is called before the first frame update
@@ -26,7 +28,7 @@ public class NewBehaviourScript : MonoBehaviour
     {
         _hero = GetComponent<Rigidbody2D>();
         _heroImages = GetComponentsInChildren<SpriteRenderer>();
-
+        Debug.Log($"Init projectile {projectile.GetHashCode()}");
     }
 
     // Update is called once per frame
@@ -34,11 +36,19 @@ public class NewBehaviourScript : MonoBehaviour
     {
         ////var touch= Input.GetTouch(0);
         ////Debug.Log(touch);
-        if (Input.GetKeyDown(KeyCode.Space))
+        ////if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetButtonDown("Jump"))
         {
-            Debug.Log("UP!");
+            Debug.Log("Jump!");
             _jump = true;
             _keyPressed = KeyCode.Space;
+        }
+
+        if (Input.GetButtonDown("Fire1"))
+        {
+            Debug.Log("Fire!");
+            _fire = true;
+            _keyPressed = KeyCode.Z;
         }
 
         _horizontalInput = Input.GetAxis("Horizontal");
@@ -120,28 +130,75 @@ public class NewBehaviourScript : MonoBehaviour
 
     private void FixedUpdate()
     {
-        switch (_keyPressed)
+        if (_jump)
         {
-            case KeyCode.Space:
-                if (!_isGrounded)
-                {
-                    _keyPressed = KeyCode.Question;
-                    return;
-                }
-
+            if (_isGrounded)
+            {
                 _hero.AddForce(Vector2.up * 7, ForceMode2D.Impulse);
-                _keyPressed = KeyCode.Question;
                 Debug.Log(_hero.velocity);
                 Debug.Log(Vector2.up);
-                break;
-            default:
-                break;
+                ////_jump = false;
+                ////return;
+            }
+
+            _jump = false;
         }
+
+        if (_fire)
+        {
+            try
+            {
+                FireProjectile();
+            }
+            finally
+            {
+                _fire = false;
+
+            }
+        }
+
+        ////switch (_keyPressed)
+        ////{
+        ////    case KeyCode.Space:
+        ////        if (!_isGrounded)
+        ////        {
+        ////            _keyPressed = KeyCode.Question;
+        ////            return;
+        ////        }
+
+        ////        _hero.AddForce(Vector2.up * 7, ForceMode2D.Impulse);
+        ////        _keyPressed = KeyCode.Question;
+        ////        Debug.Log(_hero.velocity);
+        ////        Debug.Log(Vector2.up);
+        ////        break;
+
+        ////    case KeyCode.Z:
+        ////        FireProjectile();
+        ////        break;
+        ////    default:
+        ////        break;
+        ////}
 
         _hero.velocity = new Vector2((float)3 * _horizontalInput, _hero.velocity.y);
         //_heroImages[1].transform.Rotate(new Vector3(0, _heroImages[1].transform.rotation.eulerAngles.y + 1.8f));
         var direction = _horizontalInput > 0 ? -1 : 1;
         _heroImages[1].transform.Rotate(new Vector3(0, 0, 18f * direction));
+    }
+
+    private void FireProjectile()
+    {
+        //Instantiate<Projectile>
+        ////throw new NotImplementedException();
+        ///
+
+        var resource = Resources.Load("Projectile");
+        Debug.Log($"Resource {resource}");
+        var thisProjectile = Instantiate(resource);    // Instantiate(projectile);
+        Debug.Log($"ThisProj {thisProjectile}");
+        var body = ((GameObject)thisProjectile).GetComponent<Rigidbody2D>();
+        body.velocity = transform.forward * 1; //new Vector2(25, 0);
+        Debug.Log(thisProjectile);
+        Debug.Log("FIRE!!!!");
     }
 
     void OnCollisionEnter2D(Collision2D collision)
