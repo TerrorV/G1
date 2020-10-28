@@ -8,6 +8,7 @@ using UnityEngine;
 public class HeroScript : MonoBehaviour
 {
     private Rigidbody2D _hero;
+    private Collider2D _heroZone;
     private SpriteRenderer[] _heroImages;
     private bool _jump;
     private bool _fire;
@@ -21,13 +22,16 @@ public class HeroScript : MonoBehaviour
     private bool _isGrounded;
     private int _collisions;
     public GameObject projectile;
+    public GameObject _marker;
     private Vector3 _direction;
+    private Vector3 _currentDirection;
 
 
     // Start is called before the first frame update
     void Start()
     {
         _hero = GetComponent<Rigidbody2D>();
+        _heroZone = GetComponent<Collider2D>();
         _heroImages = GetComponentsInChildren<SpriteRenderer>();
         Debug.Log($"Init projectile {projectile.GetHashCode()}");
         _direction = new Vector3(1, 0);
@@ -36,6 +40,7 @@ public class HeroScript : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
+        _marker.transform.position = _hero.position;
         ////var touch= Input.GetTouch(0);
         ////Debug.Log(touch);
         ////if (Input.GetKeyDown(KeyCode.Space))
@@ -56,12 +61,12 @@ public class HeroScript : MonoBehaviour
         _horizontalInput = Input.GetAxis("Horizontal");
         _verticalInput = Input.GetAxis("Vertical");
         _direction = new Vector3(_horizontalInput == 0 ? _direction.x : _horizontalInput, _verticalInput).normalized;
-        var currentDirection = new Vector3(_horizontalInput, _verticalInput);
+        _currentDirection = new Vector3(_horizontalInput, _verticalInput);
         _pointsUp = _verticalInput > 0;
         _pointsRight = _horizontalInput > 0;
         _pointsNeutralH = _horizontalInput == 0;
         _pointsNeutralV = _verticalInput == 0;
-        ChangeHeroDirection(currentDirection);
+        ChangeHeroDirection(_currentDirection);
 
         if (_horizontalInput > 0)
         {
@@ -157,8 +162,8 @@ public class HeroScript : MonoBehaviour
             }
         }
 
-        _hero.velocity = new Vector2((float)3 * _horizontalInput, _hero.velocity.y);
-        var direction = _horizontalInput > 0 ? -1 : 1;
+        _hero.velocity = new Vector2((float)3 * _currentDirection.normalized.x, _hero.velocity.y);
+        var direction = _direction.normalized.x;// _horizontalInput > 0 ? -1 : 1;
         _heroImages[1].transform.Rotate(new Vector3(0, 0, 18f * direction));
     }
 
@@ -170,7 +175,7 @@ public class HeroScript : MonoBehaviour
 
         ////var resource = Resources.Load("Projectile");
         ////Debug.Log($"Resource {resource}");
-        var thisProjectile = Instantiate(projectile, gameObject.transform.position + new Vector3(_direction.x/( _direction.x>0? _direction.x:1), (_direction.y > 0 ? _direction.y : 0) * 2), Quaternion.identity);    // Instantiate(projectile);
+        var thisProjectile = Instantiate(projectile, gameObject.transform.position + new Vector3(direction.normalized.x , _direction.normalized.y * 2), Quaternion.identity);    // Instantiate(projectile);
         thisProjectile.GetComponent<ProjectileScript>().Setup(_direction);
         Debug.Log($"ThisProj {thisProjectile}");
         var body = ((GameObject)thisProjectile).GetComponent<Rigidbody2D>();
