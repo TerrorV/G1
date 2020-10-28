@@ -567,6 +567,11 @@ PrefabInstance:
       propertyPath: m_Direction
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -563077357339411820, guid: c722af7c5e7943e43aef7570112117bb,
+        type: 3}
+      propertyPath: m_Size.x
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 3187555802813854590, guid: c722af7c5e7943e43aef7570112117bb,
         type: 3}
       propertyPath: m_Material
@@ -575,7 +580,7 @@ PrefabInstance:
     - target: {fileID: 3187555802813854590, guid: c722af7c5e7943e43aef7570112117bb,
         type: 3}
       propertyPath: m_Mass
-      value: 1
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 3187555802813854590, guid: c722af7c5e7943e43aef7570112117bb,
         type: 3}

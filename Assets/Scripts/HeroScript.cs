@@ -20,7 +20,8 @@ public class HeroScript : MonoBehaviour
     private bool _pointsNeutralV;
     private bool _isGrounded;
     private int _collisions;
-    public ProjectileScript projectile;
+    public GameObject projectile;
+    private Vector3 _direction;
 
 
     // Start is called before the first frame update
@@ -29,6 +30,7 @@ public class HeroScript : MonoBehaviour
         _hero = GetComponent<Rigidbody2D>();
         _heroImages = GetComponentsInChildren<SpriteRenderer>();
         Debug.Log($"Init projectile {projectile.GetHashCode()}");
+        _direction = new Vector3(1, 0);
     }
 
     // Update is called once per frame
@@ -53,59 +55,13 @@ public class HeroScript : MonoBehaviour
 
         _horizontalInput = Input.GetAxis("Horizontal");
         _verticalInput = Input.GetAxis("Vertical");
+        _direction = new Vector3(_horizontalInput == 0 ? _direction.x : _horizontalInput, _verticalInput).normalized;
+        var currentDirection = new Vector3(_horizontalInput, _verticalInput);
         _pointsUp = _verticalInput > 0;
         _pointsRight = _horizontalInput > 0;
         _pointsNeutralH = _horizontalInput == 0;
         _pointsNeutralV = _verticalInput == 0;
-
-        var isUp = _pointsNeutralH && _pointsUp;
-        var isUpDiag = !_pointsNeutralH && _pointsUp;
-        var isProne = _pointsNeutralH && !_pointsUp && !_pointsNeutralV;
-        var isDownDiag = !_pointsNeutralH && !_pointsUp && !_pointsNeutralV;
-        var isSide = !_pointsNeutralH && _pointsNeutralV;
-
-        HideImages();
-
-        if (!_isGrounded)
-        {
-            _heroImages[1].enabled = true;
-
-        }
-        else if (isUp)
-        {
-            //UP
-            _heroImages[3].enabled = true;
-
-        }
-        else if (isUpDiag)
-        {
-            // UP DIAG
-            _heroImages[2].enabled = true;
-
-        }
-        else if (isProne)
-        {
-            // DOWN PRONE
-            _heroImages[4].enabled = true;
-
-        }
-        else if (isDownDiag)
-        {
-            // DOWN DIAG
-            _heroImages[5].enabled = true;
-
-        }
-        else if (isSide)
-        {
-            // SIDE
-            _heroImages[0].enabled = true;
-        }
-        else
-        {
-            _heroImages[0].enabled = true;
-
-        }
-
+        ChangeHeroDirection(currentDirection);
 
         if (_horizontalInput > 0)
         {
@@ -128,6 +84,52 @@ public class HeroScript : MonoBehaviour
         }
     }
 
+    private void ChangeHeroDirection(Vector3 direction)
+    {
+        var isUp = direction.y == 1 && direction.x == 0;
+        var isUpDiag = direction.y == 1 && direction.x != 0;
+        var isProne = direction.y == -1 && direction.x == 0;
+        var isDownDiag = direction.y == -1 && direction.x != 0;
+        var isSide = direction.y == 0 && direction.x != 0;
+
+        HideImages();
+
+        if (!_isGrounded)
+        {
+            _heroImages[1].enabled = true;
+
+        }
+        else if (isUp)
+        {
+            //UP
+            _heroImages[3].enabled = true;
+        }
+        else if (isUpDiag)
+        {
+            // UP DIAG
+            _heroImages[2].enabled = true;
+        }
+        else if (isProne)
+        {
+            // DOWN PRONE
+            _heroImages[4].enabled = true;
+        }
+        else if (isDownDiag)
+        {
+            // DOWN DIAG
+            _heroImages[5].enabled = true;
+        }
+        else if (isSide)
+        {
+            // SIDE
+            _heroImages[0].enabled = true;
+        }
+        else
+        {
+            _heroImages[0].enabled = true;
+        }
+    }
+
     private void FixedUpdate()
     {
         if (_jump)
@@ -137,8 +139,6 @@ public class HeroScript : MonoBehaviour
                 _hero.AddForce(Vector2.up * 7, ForceMode2D.Impulse);
                 Debug.Log(_hero.velocity);
                 Debug.Log(Vector2.up);
-                ////_jump = false;
-                ////return;
             }
 
             _jump = false;
@@ -148,7 +148,7 @@ public class HeroScript : MonoBehaviour
         {
             try
             {
-                FireProjectile();
+                FireProjectile(_direction);
             }
             finally
             {
@@ -157,43 +157,21 @@ public class HeroScript : MonoBehaviour
             }
         }
 
-        ////switch (_keyPressed)
-        ////{
-        ////    case KeyCode.Space:
-        ////        if (!_isGrounded)
-        ////        {
-        ////            _keyPressed = KeyCode.Question;
-        ////            return;
-        ////        }
-
-        ////        _hero.AddForce(Vector2.up * 7, ForceMode2D.Impulse);
-        ////        _keyPressed = KeyCode.Question;
-        ////        Debug.Log(_hero.velocity);
-        ////        Debug.Log(Vector2.up);
-        ////        break;
-
-        ////    case KeyCode.Z:
-        ////        FireProjectile();
-        ////        break;
-        ////    default:
-        ////        break;
-        ////}
-
         _hero.velocity = new Vector2((float)3 * _horizontalInput, _hero.velocity.y);
-        //_heroImages[1].transform.Rotate(new Vector3(0, _heroImages[1].transform.rotation.eulerAngles.y + 1.8f));
         var direction = _horizontalInput > 0 ? -1 : 1;
         _heroImages[1].transform.Rotate(new Vector3(0, 0, 18f * direction));
     }
 
-    private void FireProjectile()
+    private void FireProjectile(Vector3 direction)
     {
         //Instantiate<Projectile>
         ////throw new NotImplementedException();
         ///
 
-        var resource = Resources.Load("Projectile");
-        Debug.Log($"Resource {resource}");
-        var thisProjectile = Instantiate(resource);    // Instantiate(projectile);
+        ////var resource = Resources.Load("Projectile");
+        ////Debug.Log($"Resource {resource}");
+        var thisProjectile = Instantiate(projectile, gameObject.transform.position + new Vector3(_direction.x/( _direction.x>0? _direction.x:1), (_direction.y > 0 ? _direction.y : 0) * 2), Quaternion.identity);    // Instantiate(projectile);
+        thisProjectile.GetComponent<ProjectileScript>().Setup(_direction);
         Debug.Log($"ThisProj {thisProjectile}");
         var body = ((GameObject)thisProjectile).GetComponent<Rigidbody2D>();
         body.velocity = transform.forward * 1; //new Vector2(25, 0);
@@ -208,8 +186,6 @@ public class HeroScript : MonoBehaviour
 
         Debug.Log($"Is grounded {_isGrounded}");
         _isGrounded = _collisions > 0;//  true;
-        //_heroImages[0].enabled = true;
-        //_heroImages[1].enabled = false;
         HideImages();
     }
 
@@ -226,15 +202,9 @@ public class HeroScript : MonoBehaviour
         _collisions--;
         Debug.Log($"Collisions { _collisions}");
         HideImages();
-        ////Collider2D[] allColliders = null;
-        ////_hero.GetAttachedColliders(allColliders);
-        ////Debug.Log(allColliders);
-        ////Collider2D[] tempcolliders = null;
         _isGrounded = _collisions > 0; //allColliders.Any(c => c.GetContacts(tempcolliders) > 0);  //collision.contactCount > 0;
-        ////_heroImages[0].enabled = false;
         _heroImages[1].enabled = !_isGrounded;
         _heroImages[0].enabled = _isGrounded;
-        ////Debug.Log($"Collisions count {collision.contactCount}");
         Debug.Log($"Is grounded {_isGrounded}");
     }
 }
