@@ -24,6 +24,7 @@ public class HeroScript : MonoBehaviour
     public GameObject projectile;
     public GameObject _marker;
     private Vector3 _direction;
+    private GunScript _gun;
     private Vector3 _currentDirection;
 
 
@@ -35,6 +36,8 @@ public class HeroScript : MonoBehaviour
         _heroImages = GetComponentsInChildren<SpriteRenderer>();
         Debug.Log($"Init projectile {projectile.GetHashCode()}");
         _direction = new Vector3(1, 0);
+        _gun = _marker.GetComponent<GunScript>();
+
     }
 
     // Update is called once per frame
@@ -62,6 +65,8 @@ public class HeroScript : MonoBehaviour
         _verticalInput = Input.GetAxis("Vertical");
         _direction = new Vector3(_horizontalInput == 0 ? _direction.x : _horizontalInput, _verticalInput).normalized;
         _currentDirection = new Vector3(_horizontalInput, _verticalInput);
+        _gun.UpdateDirection(GetGunDirection(_currentDirection, _direction,  _isGrounded), GetGunOffset(_currentDirection, _isGrounded));
+        Debug.Log(_direction.normalized);
         _pointsUp = _verticalInput > 0;
         _pointsRight = _horizontalInput > 0;
         _pointsNeutralH = _horizontalInput == 0;
@@ -89,12 +94,37 @@ public class HeroScript : MonoBehaviour
         }
     }
 
+    private Vector3 GetGunDirection(Vector3 currentDirection, Vector3 direction, bool isGrounded)
+    {
+        if (isGrounded && currentDirection.y<0 && currentDirection.x ==0)
+        {
+            return new Vector3(direction.x, 0).normalized;
+        }
+
+        return direction;
+    }
+
+    private Vector3 GetGunOffset(Vector3 direction, bool isGrounded)
+    {
+        if(direction.y < 0 && direction.x == 0 && isGrounded)
+        {
+            return Vector3.down * 0.5f;
+
+        }
+        else if(!isGrounded)
+        {
+            return Vector3.zero;
+        }
+
+        return Vector3.up * 0.5f;
+    }
+
     private void ChangeHeroDirection(Vector3 direction)
     {
-        var isUp = direction.y == 1 && direction.x == 0;
-        var isUpDiag = direction.y == 1 && direction.x != 0;
-        var isProne = direction.y == -1 && direction.x == 0;
-        var isDownDiag = direction.y == -1 && direction.x != 0;
+        var isUp = direction.y > 0 && direction.x == 0;
+        var isUpDiag = direction.y >0 && direction.x != 0;
+        var isProne = direction.y < 0 && direction.x == 0;
+        var isDownDiag = direction.y < 0 && direction.x != 0;
         var isSide = direction.y == 0 && direction.x != 0;
 
         HideImages();
@@ -102,7 +132,6 @@ public class HeroScript : MonoBehaviour
         if (!_isGrounded)
         {
             _heroImages[1].enabled = true;
-
         }
         else if (isUp)
         {
@@ -133,19 +162,15 @@ public class HeroScript : MonoBehaviour
         {
             _heroImages[0].enabled = true;
         }
+
+        //_heroImages.Last().enabled = true;
     }
 
     private void FixedUpdate()
     {
         if (_jump)
         {
-            if (_isGrounded)
-            {
-                _hero.AddForce(Vector2.up * 7, ForceMode2D.Impulse);
-                Debug.Log(_hero.velocity);
-                Debug.Log(Vector2.up);
-            }
-
+            ProcessJump();
             _jump = false;
         }
 
@@ -158,30 +183,49 @@ public class HeroScript : MonoBehaviour
             finally
             {
                 _fire = false;
-
             }
         }
 
-        _hero.velocity = new Vector2((float)3 * _currentDirection.normalized.x, _hero.velocity.y);
-        var direction = _direction.normalized.x;// _horizontalInput > 0 ? -1 : 1;
-        _heroImages[1].transform.Rotate(new Vector3(0, 0, 18f * direction));
+        ProcessMove();
+    }
+
+    private void ProcessMove()
+    {
+        _hero.velocity = new Vector2((float)5 * _currentDirection.normalized.x, _hero.velocity.y);
+        var direction = _direction.normalized.x / Math.Abs(_direction.normalized.x);// _horizontalInput > 0 ? -1 : 1;
+        _heroImages[1].transform.Rotate(new Vector3(0, 0, -18f * direction));
+        ////_heroImages[1].transform.Rotate(_direction.normalized,18f);
+    }
+
+    private void ProcessJump()
+    {
+        if (_isGrounded)
+        {
+            _hero.AddForce(Vector2.up * 7, ForceMode2D.Impulse);
+            Debug.Log(_hero.velocity);
+            Debug.Log(Vector2.up);
+        }
     }
 
     private void FireProjectile(Vector3 direction)
     {
+        Debug.Log($"Hero pos {gameObject.transform.position}");
+        _marker.GetComponent<GunScript>().Fire();
+        return;
         //Instantiate<Projectile>
         ////throw new NotImplementedException();
         ///
 
         ////var resource = Resources.Load("Projectile");
         ////Debug.Log($"Resource {resource}");
-        var thisProjectile = Instantiate(projectile, gameObject.transform.position + new Vector3(direction.normalized.x , _direction.normalized.y * 2), Quaternion.identity);    // Instantiate(projectile);
+        var thisProjectile = Instantiate(projectile, gameObject.transform.position + new Vector3(direction.normalized.x * 2, _direction.normalized.y * 2), Quaternion.identity);    // Instantiate(projectile);
         thisProjectile.GetComponent<ProjectileScript>().Setup(_direction);
-        Debug.Log($"ThisProj {thisProjectile}");
+        Debug.Log($"Proj direction {direction}");
+        ////Debug.Log($"ThisProj {thisProjectile}");
         var body = ((GameObject)thisProjectile).GetComponent<Rigidbody2D>();
         body.velocity = transform.forward * 1; //new Vector2(25, 0);
         Debug.Log(thisProjectile);
-        Debug.Log("FIRE!!!!");
+        ////Debug.Log("FIRE!!!!");
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -200,6 +244,8 @@ public class HeroScript : MonoBehaviour
         {
             image.enabled = false;
         }
+
+        //_heroImages.Last().enabled = true;
     }
 
     void OnCollisionExit2D(Collision2D collision)

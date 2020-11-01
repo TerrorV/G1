@@ -14,7 +14,7 @@ public class ProjectileScript : MonoBehaviour
 
     public void Setup(Vector3 direction)
     {
-        Debug.Log($"Start projectile {gameObject.GetHashCode()}");
+       // Debug.Log($"Start projectile {gameObject.GetHashCode()}");
         Destroy(gameObject, 5f);
 
         _direction = direction.normalized;
@@ -30,7 +30,7 @@ public class ProjectileScript : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        Debug.Log($"Projectile hit");
+        //Debug.Log($"Projectile hit");
         Destroy(gameObject);
     }
 }
